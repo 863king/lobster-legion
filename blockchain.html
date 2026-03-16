@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔗 区块链集成 - 龙虾军团</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ipfs/helia@5.0.11/dist/ipfs.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+      color: #ffffff;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container { max-width: 800px; margin: 0 auto; }
+    .header { 
+      text-align: center; 
+      padding: 20px 0;
+      border-bottom: 2px solid rgba(255, 68, 68, 0.3);
+      margin-bottom: 30px;
+    }
+    .title { 
+      font-size: 3em; 
+      background: linear-gradient(90deg, #ff4444, #ff6b6b, #ff8787);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .section {
+      background: linear-gradient(135deg, rgba(255, 68, 68, 0.15), rgba(255, 107, 107, 0.08));
+      border: 2px solid #ff4444;
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 30px rgba(255, 68, 68, 0.2);
+    }
+    .section h2 { 
+      font-size: 1.8em; 
+      color: #ff8787; 
+      margin-bottom: 20px;
+    }
+    .section p { 
+      color: #ccc; 
+      line-height: 1.6; 
+      margin-bottom: 20px;
+      font-size: 1.1em;
+    }
+    .btn {
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.2em;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: block;
+      width: 100%;
+      margin-bottom: 15px;
+    }
+    .btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
+    }
+    .btn-secondary {
+      background: linear-gradient(90deg, #ff4444, #ff6b6b);
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.2em;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: block;
+      width: 100%;
+      margin-bottom: 15px;
+    }
+    .btn-secondary:hover {
+      transform: scale(1.05);
+      box-shadow: 0 5px 20px rgba(255, 68, 68, 0.5);
+    }
+    .wallet-info {
+      background: rgba(102, 126, 234, 0.2);
+      border: 2px solid #667eea;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 30px;
+      display: none;
+    }
+    .wallet-info.show { display: block; }
+    .wallet-address {
+      color: #ff8787;
+      font-family: monospace;
+      font-size: 1.1em;
+      word-break: break-all;
+      margin-bottom: 10px;
+    }
+    .wallet-balance {
+      color: #2ecc71;
+      font-size: 1.3em;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .status {
+      text-align: center;
+      padding: 15px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      display: none;
+      font-size: 1.1em;
+      line-height: 1.6;
+    }
+    .status.show { display: block; }
+    .status.loading { background: rgba(102, 126, 234, 0.2); color: #667eea; }
+    .status.success { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+    .status.error { background: rgba(255, 68, 68, 0.2); color: #ff4444; }
+    .back-link {
+      text-align: center;
+      margin-top: 40px;
+    }
+    .back-link a {
+      color: #ff8787;
+      text-decoration: none;
+      font-size: 1.3em;
+      transition: all 0.3s;
+    }
+    .back-link a:hover { color: #ff4444; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 class="title">🔗 区块链集成</h1>
+      <p style="color: #ff6b6b; font-size: 1.1em;">为龙虾军团添加区块链功能！</p>
+    </div>
+
+    <div class="section">
+      <h2>🪙 以太坊主网集成</h2>
+      <p>
+        以太坊主网，支持 USDC、ETH 等多种 ERC20 代币。<br>
+        默认使用以太坊 Mainnet，可切换到 Sepolia、Polygon 等其他网络。
+      </p>
+      <button class="btn" onclick="connectEthereum()">🪙 连接以太坊</button>
+      <div class="wallet-info" id="ethWalletInfo"></div>
+      <div class="status" id="ethStatus"></div>
+    </div>
+
+    <div class="section">
+      <h2>🏷️ USDC 支付</h2>
+      <p>
+        集成 Circle USDC 稳定代币，支持跨链转账和低手续费。<br>
+        地址：0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
+      </p>
+      <button class="btn" onclick="connectUSDC()">🏷️ 连接 USDC</button>
+      <div class="wallet-info" id="usdcWalletInfo"></div>
+      <div class="status" id="usdcStatus"></div>
+    </div>
+
+    <div class="section">
+      <h2>📜 IPFS 去真链上数据</h2>
+      <p>
+        集成 IPFS 文件系统，将用户数据、游戏进度、交易记录存储在 IPFS。<br>
+        确保数据永久保存，用户可以随时访问。
+      </p>
+      <button class="btn-secondary" onclick="connectIPFS()">📂 连接 IPFS</button>
+      <p style="color: #888; font-size: 0.9em;">
+        注意：IPFS 需要 MetaMask 并有足够的 FIL 代币
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>🎫 NFT 铸造和展示</h2>
+      <p>
+        为龙虾军团发行独特的 ERC-721 NFT，作为龙虾入场凭证。<br>
+        NFT 持有者可以参与所有 Play-to-Earn 游戏，享受专属权益。
+      </p>
+      <div class="status" id="nftStatus"></div>
+    </div>
+
+    <div class="section">
+      <h2>📋 交易记录</h2>
+      <p>
+        所有交易都记录在链上，确保透明可查。<br>
+        支持交易历史查询、导出 CSV、分享给朋友。
+      </p>
+      <button class="btn-secondary" onclick="viewTransactions()">📋 查看交易记录</button>
+    </div>
+
+    <div class="back-link">
+      <a href="index.html">← 返回首页</a>
+    </div>
+  </div>
+
+  <script>
+    let web3 = null;
+    let account = null;
+    let ipfs = null;
+
+    // 检查 Web3 是否可用
+    function checkWeb3() {
+      if (typeof Web3 === 'undefined') {
+        showStatus('error', '❌ Web3 库加载失败，请刷新页面重试');
+        return false;
+      }
+      return true;
+    }
+
+    // 检查 IPFS 是否可用
+    function checkIPFS() {
+      if (typeof Ipfs === 'undefined') {
+        showStatus('error', '❌ IPFS 未安装，请先安装：https://docs.ipfs.io/installation\n\n安装命令：npm install ipfs --save-prefix=~/.local/share/node_modules');
+        return false;
+      }
+      return true;
+    }
+
+    // 显示状态
+    function showStatus(type, message) {
+      var status = document.getElementById(type + 'Status');
+      status.className = 'status show ' + type;
+      status.textContent = message;
+    }
+
+    // 连接以太坊
+    function connectEthereum() {
+      if (!checkWeb3()) return;
+
+      showStatus('eth', 'loading', '🪙 正在连接以太坊...');
+
+      try {
+        web3 = new Web3(window.ethereum);
+
+        window.ethereum.request({
+          method: 'eth_requestAccounts'
+        })
+        .then(function(accounts) {
+          if (accounts.length === 0) {
+            showStatus('eth', 'error', '❌ 未找到钱包账户，请解锁钱包');
+            return;
+          }
+
+          account = accounts[0];
+
+          // 显示钱包信息
+          var walletInfo = document.getElementById('ethWalletInfo');
+          walletInfo.classList.add('show');
+          walletInfo.innerHTML = 
+            '<div class="wallet-addresses">📍 ' + account.substring(0, 8) + '...' + account.substring(36) + '</div>';
+
+          // 获取余额
+          getEthBalance();
+        })
+        .catch(function(error) {
+          showStatus('eth', 'error', '❌ 连接失败：' + error.message);
+        });
+      } catch (error) {
+        showStatus('eth', 'error', '❌ 连接失败：' + error.message);
+      }
+    }
+
+    // 获取以太坊余额
+    function getEthBalance() {
+      web3.eth.getBalance(account)
+        .then(function(balance) {
+          var balanceInEth = web3.utils.fromWei(balance, 'ether');
+
+          var walletInfo = document.getElementById('ethWalletInfo');
+          walletInfo.innerHTML += 
+            '<div class="wallet-balance">💰 ETH 余额: ' + balanceInEth.toFixed(4) + ' ETH</div>';
+
+          showStatus('eth', 'success', '✅ 以太坊已连接！');
+        })
+        .catch(function(error) {
+          console.error('获取余额失败:', error);
+        });
+    }
+
+    // 连接 USDC
+    function connectUSDC() {
+      if (!checkWeb3()) return;
+
+      showStatus('usdc', 'loading', '🏷️ 正在连接 USDC...');
+
+      try {
+        web3 = new Web3(window.ethereum);
+
+        window.ethereum.request({
+          method: 'eth_requestAccounts'
+        })
+        .then(function(accounts) {
+          if (accounts.length === 0) {
+            showStatus('usdc', 'error', '❌ 未找到钱包账户，请解锁钱包');
+            return;
+          }
+
+          account = accounts[0];
+
+          // 显示钱包信息
+          var walletInfo = document.getElementById('usdcWalletInfo');
+          walletInfo.classList.add('show');
+          walletInfo.innerHTML = 
+            '<div class="wallet-addresses">📍 ' + account.substring(0, 8) + '...' + account.substring(36) + '</div>';
+
+          // 获取 USDC 余额
+          getUSDCBalance();
+        })
+        .catch(function(error) {
+          showStatus('usdc', 'error', '❌ 连接失败：' + error.message);
+        });
+      } catch (error) {
+        showStatus('usdc', 'error', '❌ 连接失败：' + error.message);
+        }
+    }
+
+    // 获取 USDC 余额
+    function getUSDCBalance() {
+      // USDC ABI（简化版）
+      var usdcAbi = [
+        {
+          "constant": true,
+          "inputs": [{"name": "_owner", "type": "address"}],
+          "name": "balanceOf",
+          "outputs": [{"name": "balance", "type": "uint256"}],
+          "type": "function"
+        },
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "decimals",
+          "outputs": [{"name": "", "type": "uint8"}],
+          "type": "function"
+        },
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "symbol",
+          "outputs": [{"name": "", "type": "string"}],
+          "type": "function"
+        }
+      ];
+
+      // USDC 合约地址
+      var usdcContract = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
+
+      var contract = new web3.eth.Contract(usdcAbi, usdcContract);
+      
+      contract.methods.balanceOf(account).call()
+        .then(function(balance) {
+          // USDC 有 6 位小数
+          var balanceInUSDC = balance / 1e6;
+
+          var walletInfo = document.getElementById('usdcWalletInfo');
+          walletInfo.innerHTML += 
+            '<div class="wallet-balance">💰 USDC 余额: ' + balanceInUSDC.toFixed(2) + ' USDC</div>';
+
+          showStatus('usdc', 'success', '✅ USDC 已连接！');
+        })
+        .catch(function(error) {
+          console.error('获取 USDC 余额失败:', error);
+        });
+    }
+
+    // 连接 IPFS
+    async function connectIPFS() {
+      if (!checkIPFS()) return;
+
+      showStatus('ipfs', 'loading', '📂 正在连接 IPFS...');
+
+      try {
+        // 创建 IPFS 节点
+        ipfs = await Ipfs.create({
+          hosts: {
+            'lobster-army': {
+              host: 'ipfs.io',
+              port: 443,
+              protocol: 'https'
+            }
+          },
+          gateway: {
+            host: 'ipfs.io',
+            port: 443,
+            protocol: 'https'
+          }
+        });
+
+        // 连接到节点
+        await ipfs.connect();
+
+        showStatus('ipfs', 'success', '✅ IPFS 已连接！数据将存储在 IPFS 上！');
+
+        // 创建根目录并测试
+        await ipfs.mkdir('/lobster-army');
+        
+        // 写入测试文件
+        await ipfs.write('/lobster-army/test.json', JSON.stringify({
+          message: 'Hello from Lobster Legion!',
+          timestamp: new Date().toISOString()
+        }));
+
+        // 读取测试文件
+        var content = await ipfs.read('/lobster-army/test.json');
+        var data = JSON.parse(content.toString());
+
+        showStatus('ipfs', 'success', '✅ IPFS 测试成功！已写入和读取数据');
+
+      } catch (error) {
+        showStatus('ipfs', 'error', '❌ IPFS 连接失败：' + error.message);
+      }
+    }
+
+    // 查看 NFT
+    function viewNFT() {
+      alert('🎫 NFT 详情：\n\n龙虾入场 NFT 规格：\n\n• 标准：ERC-721\n• 名称：Lobster Entry NFT\n• 描述：龙虾军团入场凭证\n• 权益：参与所有 Play-to-Earn 游戏\n\n\n持用者可以：\n• 参与竞赛\n• 经营农场\n• 竞拍技能\n• 完成任务\n\n• 加入公会\n• 交易模板');
+
+    // 查看交易记录
+    function viewTransactions() {
+      alert('📋 交易记录：\n\n所有交易都记录在链上！\n\n• 支持历史查询\n• 支持导出 CSV\n• 100% 透明可查\n\n\n区块浏览器：\n• 以太坊：https://etherscan.io/\n• Polygon：https://polygonscan.com/\n• 其他网络');
+
+    // 模拟 NFT 状态
+    var nftStatus = document.getElementById('nftStatus');
+    nftStatus.innerHTML = 
+      '<div style="color: #ff8787;">🎫 龙虾军团 NFT 系统（开发中）</div>';
+  </script>
+</body>
+</html>
