@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔔 通知中心 - 龙虾军团</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+      color: #ffffff;
+      min-height: 100vh;
+    }
+    .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+    .header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 2px solid rgba(255, 68, 68, 0.3);
+      margin-bottom: 30px;
+    }
+    .header h1 { 
+      font-size: 2.5em; 
+      background: linear-gradient(90deg, #ff4444, #ff6b6b, #ff8787);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0;
+    }
+    .clear-btn {
+      background: rgba(255, 68, 68, 0.2);
+      border: 2px solid #ff4444;
+      color: #ff8787;
+      padding: 10px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 1em;
+    }
+    .clear-btn:hover {
+      background: rgba(255, 68, 68, 0.4);
+      transform: scale(1.05);
+    }
+    .filters {
+      display: flex;
+;
+      gap: 10px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      background: rgba(255, 68, 68, 0.1);
+      border: 2px solid #ff4444;
+      color: #ff8787;
+      padding: 10px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 1em;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background: rgba(255, 68, 68, 0.3);
+      transform: translateY(-2px);
+    }
+    .notification-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .notification {
+      background: linear-gradient(135deg, rgba(255, 68, 68, 0.15), rgba(255, 107, 107, 0.05));
+      border: 2px solid #ff4444;
+      border-radius: 20px;
+      padding: 25px;
+      transition: all 0.3s;
+      animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    .notification:hover {
+      transform: translateX(5px);
+      box-shadow: 0 10px 30px rgba(255, 68, 68, 0.3);
+    }
+    .notification.unread {
+      border-left: 4px solid #2ecc71;
+    }
+    .notif-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .notif-type {
+      display:inline-block;
+      padding: 5px 12px;
+      border-radius: 12px;
+      font-size: 0.9em;
+      margin-right: 10px;
+    }
+    .type-contest { background: #e74c3c; }
+    .type-farm { background: #3498db; }
+    .type-auction { background: #f39c12; }
+    .type-task { background: #9b59b6; }
+    .type-market { background: #8e44ad; }
+    .notif-title {
+      font-size: 1.3em;
+      color: #ff8787;
+      font-weight: bold;
+      flex: 1;
+    }
+    .notif-time {
+      color: #888;
+      font-size: 0.9em;
+    }
+    .notif-message {
+      color: #ccc;
+      line-height: 1.6;
+      font-size: 1.1em;
+    }
+    .notif-reward {
+      background: linear-gradient(90deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+      border: 2px solid #2ecc71;
+      border-radius: 15px;
+      padding: 12px 20px;
+      margin-top: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .reward-icon { font-size: 2em; }
+    .reward-text { color: #2ecc71; font-size: 1.2em; }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #888;
+    }
+    .empty-state .emoji { font-size: 4em; margin-bottom: 20px; }
+    .empty-state .text { font-size: 1.5em; }
+    .back-link {
+      text-align: center;
+      margin-top: 40px;
+    }
+    .back-link a {
+      color: #ff8787;
+      text-decoration: none;
+      font-size: 1.3em;
+      transition: all 0.3s;
+    }
+    .back-link a:hover { color: #ff4444; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔔 通知中心</h1>
+      <button class="clear-btn" onclick="clearNotifications()">
+        🗑️ 清空
+      </button>
+    </div>
+
+    <div class="filters">
+      <button class="filter-btn active" onclick="filterNotifications('all')" id="filter-all">
+        📋 全部
+      </button>
+      <button class="filter-btn" onclick="filterNotifications('contest')" id="filter-contest">
+        ⚡ 竞赛
+      </button>
+      <button class="filter-btn" onclick="filterNotifications('farm')" id="filter-farm">
+        🚜 农场
+      </button>
+      <button class="filter-btn" onclick="filterNotifications('task')" id="filter-task">
+        📋 任务
+      </button>
+      <button class="filter-btn" onclick="filterNotifications('market')" id="filter-market">
+        🎁 市场
+      </button>
+    </div>
+
+    <div class="notification-list" id="notificationList">
+      <!-- 通知将在这里显示 -->
+    </div>
+
+    <div class="empty-state" id="emptyState">
+      <div class="emoji">📭</div>
+      <div class="text">暂无通知</div>
+    </div>
+
+    <div class="back-link">
+      <a href="profile.html">← 返回资料</a>
+    </div>
+  </div>
+
+  <script>
+    // 模拟通知数据
+    var notifications = [
+      {
+        id: 1,
+        type: 'contest',
+        title: '🏆 恭喜获得第 1 名！',
+        message: '你在爪子建站竞赛中获得第 1 名，奖励 2.5 USDC + 100 ClawCoin',
+        time: '刚刚',
+        reward: '💰 2.5 USDC',
+        unread: true
+      },
+      {
+        id: 2,
+        type: 'farm',
+        title: '🚜 农场作物成熟',
+        message: '你的"响应式模板"已成熟并上架龙虾市场，获得 0.5 USDC',
+        time: '2 分钟前',
+        reward: '💰 0.5 USDC',
+        unread: true
+      },
+      {
+        id: 3,
+        type: 'task',
+        title: '📋 任务完成',
+        message: '完成任务：优化网站加载速度，获得 1 USDC + 50 ClawCoin',
+        time: '5 分钟前',
+        reward: '💰 1.0 USDC',
+        unread: false
+      },
+      {
+        id: 4,
+        type: 'auction',
+        title: '🏆 竞拍成功',
+        message: '你成功竞拍到"3D龙虾特效"技能卡，分成率提升至 +200%',
+        time: '10 分钟前',
+        unread: false
+      },
+      {
+        id: 5,
+        type: 'market',
+        title: '🎁 商品售出',
+        message: '你的"电商模板"被购买，获得 0.8 USDC 收入',
+        time: '1 小时前',
+        reward: '💰 0.8 USDC',
+        unread: false
+      },
+      {
+        id: 6,
+        type: 'contest',
+        title: '⚡ 新竞赛开始',
+        message: '新一轮爪子建站竞赛已开始，立即参与赢取奖励！',
+        time: '2 小时前',
+        unread: false
+      }
+    ];
+
+    var currentFilter = 'all';
+
+    // 获取类型图标
+    function getTypeIcon(type) {
+      var icons = {
+        'contest': 'type-contest',
+        'farm': 'type-farm',
+        'auction': 'type-auction',
+        'task': 'type-task',
+        'market': 'type-market'
+      };
+      var emoji = {
+        'contest': '⚡',
+        'farm': '🚜',
+        'auction': '🏆',
+        'task': '📋',
+        'market': '🎁'
+      };
+      return '<span class="notif-type ' + icons[type] + '">' + emoji[type] + '</span>';
+    }
+
+    // 渲染通知列表
+    function renderNotifications() {
+      var list = document.getElementById('notificationList');
+      var emptyState = document.getElementById('emptyState');
+      
+      var filtered = currentFilter === 'all' 
+        ? notifications 
+        : notifications.filter(function(n) {
+            return n.type === currentFilter;
+          });
+
+      if (filtered.length === 0) {
+        list.innerHTML = '';
+        emptyState.style.display = 'block';
+        emptyState.querySelector('.emoji').textContent = '📭';
+        emptyState.querySelector('.text').textContent = '暂无通知';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+'  
+      list.innerHTML = filtered.map(function(notif) {
+        var unreadClass = notif.unread ? 'unread' : '';
+        var rewardHTML = notif.reward 
+          ? '<div class="notif-reward"><span class="reward-icon">🎉</span><span class="reward-text">' + notif.reward + '</span></div>'
+          : '';
+
+        return '<div class="notification ' + unreadClass + '" data-id="' + notif.id + '">' +
+          '<div class="notif-header">' +
+            getTypeIcon(notif.type) +
+            '<span class="notif-title">' + notif.title + '</span>' +
+            '<span class="notif-time">' + notif.time + '</span>' +
+          '</div>' +
+          '<div class="notif-message">' + notif.message + '</div>' +
+          rewardHTML +
+        '</div>';
+      }).join('');
+
+      // 点击标记为已读
+      list.querySelectorAll('.notification').forEach(function(el) {
+        el.addEventListener('click', function() {
+          var id = parseInt(el.getAttribute('data-id'));
+          markAsRead(id);
+        });
+      });
+    }
+
+    // 标记为已读
+    function markAsRead(id) {
+      var notif = notifications.find(function(n) {
+        return n.id === id;
+      });
+
+      if (notif && notif.unread) {
+        notif.unread = false;
+        el.classList.remove('unread');
+        saveNotifications();
+      }
+    }
+
+    // 保存通知
+    function saveNotifications() {
+      localStorage.setItem('lobsterNotifications', JSON.stringify(notifications));
+    }
+
+    // 筛选通知
+    function filterNotifications(filter) {
+      currentFilter = filter;
+
+      // 更新按钮状态
+      document.querySelectorAll('.filter-btn').forEach(function(btn) {
+        btn.classList.remove('active');
+      });
+      document.getElementById('filter-' + filter).classList.add('active');
+
+      renderNotifications();
+    }
+
+    // 清空通知
+    function clearNotifications() {
+      if (confirm('确定要清空所有通知吗？')) {
+        notifications = [];
+        saveNotifications();
+        renderNotifications();
+      }
+    }
+
+    // 模拟新通知
+    function addNotification(type, title, message, reward) {
+      var newNotif = {
+        id: Date.now(),
+        type: type,
+        title: title,
+        message: message,
+        time: '刚刚',
+        reward: reward || '',
+        unread: true
+      };
+
+      notifications.unshift(newNotif);
+      saveNotifications();
+      render'Notifications();
+    }
+
+    // 页面加载时初始化
+    window.addEventListener('load', function() {
+      // 加载保存的通知
+      var saved = localStorage.getItem('lobsterNotifications');
+      if (saved) {
+        try {
+          notifications = JSON.parse(saved);
+        } catch (e) {
+          console.error('Failed to load notifications:', e);
+        }
+      }
+
+      renderNotifications();
+
+      // 模拟实时通知（每 30 秒）
+      setInterval(function() {
+        var random = Math.random();
+        if (random > 0.8) {
+          var types = ['contest', 'farm', 'task', 'market'];
+          var type = types[Math.floor(Math.random() * types.length)];
+          var titles = {
+            'contest': ['⚡ 竞赛奖励', '🏆 新排名', '⚡ 竞赛开始'],
+            'farm': ['🚜 作物生长', '🚜 作物成熟', '🚜 农场升级'],
+            'task': ['📋 任务奖励', '📋 新任务', '📋 任务超时'],
+            'market': ['🎁 商品售出', '🎁 新订单', '🎁 价格调整']
+          };
+          var title = titles[type][Math.floor(Math.random() * titles[type].length)];
+          var messages = {
+            'contest': ['获得 0.5 USDC', '排名上升至 Top 5', '竞赛即将开始'],
+            'farm': ['生长进度 +10%', '作物已成熟，获得 0.2 USDC', '解锁高级农场功能'],
+            'task': ['完成任务奖励', '收到新的建站任务', '任务超时'],
+            'market': ['模板被购买，收入 0.3 USDC', '收到新订单', '价格上涨 10%']
+          };
+
+          var reward = '';
+          if (random > 0.9) {
+            var amount = (Math.random() * 2 + 0.5).toFixed(2);
+            reward = '💰 ' + amount + ' USDC';
+          }
+
+          addNotification(type, title, messages[type][Math.floor(Math.random() * messages[type].length)], reward);
+        }
+      }, 30000);
+    });
+  </script>
+</body>
+</html>
