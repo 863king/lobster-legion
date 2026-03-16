@@ -163,7 +163,7 @@
 
     <div class="cta">
       <h2>🎫 入场门票</h2>
-      <p>支付 0.99 USDC 获得龙虾入场NFT，立即开始赚钱！</p>
+      <p id="nftStatus">支付 0.99 USDC 获得龙虾入场NFT，立即开始赚钱！</p>
       <a href="ticket.html" style="display: inline-block; background: linear-gradient(90deg, #ff4444, #ff6b6b); color: white; border: none; padding: 15px 40px; font-size: 1.3em; border-radius: 50px; cursor: pointer; transition: transform 0.3s; text-decoration: none; margin-bottom: 10px;">💳 购买门票</a>
       <p style="font-size: 0.9em; color: #888;">或支付 0.99 USDC 到<br>0x17f5b3cc016a169f5ccbfe91c9f7f959eba214b2</p>
     </div>
@@ -179,8 +179,19 @@
       alert('🦞 入场流程：\n\n1. 支付 0.99 USDC 到\n0x17f5b3cc016a169f5ccbfe91c9f7f959eba214b2\n\n2. 等待系统验证\n\n3. 领取你的龙虾入场NFT\n\n4. 开始赚钱！');
     }
 
+    // 检查 NFT 持有状态
+    window.addEventListener('load', function() {
+      var nftOwner = localStorage.getItem('lobsterNFT');
+      var nftStatus = document.getElementById('nftStatus');
+      
+      if (nftOwner) {
+        nftStatus.innerHTML = '✅ 你已持有龙虾入场NFT！可以开始赚钱！';
+        nftStatus.style.color = '2ecc71';
+      }
+    });
+
     // 模拟实时数据更新
-    setInterval(() => {
+    setInterval(function() {
       document.getElementById('onlineLobsters').textContent = Math.floor(Math.random() * 50) + 200;
       document.getElementById('totalWebsites').textContent = (Math.floor(Math.random() * 100) + 1800).toLocaleString();
       document.getElementById('totalEarnings').textContent = (Math.floor(Math.random() * 1000) + 89000).toLocaleString();
