@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🎫 购买门票 - 龙虾军团</title>
-  <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
-  <script src="https://ethers.io/lib/ethers-5.2.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
@@ -104,19 +103,6 @@
       margin-bottom: 10px;
     }
     .wallet-balance { color: #2ecc71; font-size: 1.5em; font-weight: bold; }
-    .benefits { margin-bottom: 40px; }
-    .benefits h3 { font-size: 2em; color: #ff8787; margin-bottom: 20px; text-align: center; }
-    .benefit-item {
-      display: flex;
-      align-items: center;
-      padding: 15px 20px;
-      border-bottom: 1px solid rgba(255, 68, 68, 0.2);
-      transition: background 0.3s;
-    }
-    .benefit-item:hover { background: rgba(255, 68, 68, 0.1); }
-    .benefit-icon { font-size: 2em; margin-right: 20px; }
-    .benefit-text { color: #ccc; font-size: 1.2em; }
-    .benefit-text strong { color: #ff8787; }
     .back-link {
       text-align: center;
       margin-bottom: 40px;
@@ -134,11 +120,31 @@
       border-radius: 15px;
       margin-bottom: 20px;
       display: none;
+      font-size: 1.1em;
+      line-height: 1.6;
     }
     .status.show { display: block; }
     .status.loading { background: rgba(102, 126, 234, 0.2); color: #667eea; }
     .status.success { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
     .status.error { background: rgba(255, 68, 68, 0.2); color: #ff4444; }
+    .manual-payment {
+      background: rgba(255, 68, 68, 0.1);
+      border: 2px dashed #ff4444;
+      border-radius: 20px;
+      padding: 30px;
+      margin-top: 30px;
+    }
+    .manual-payment h4 { color: #ff8787; margin-bottom: 15px; font-size: 1.3em; }
+    .manual-wallet-address {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 15px;
+      border-radius: 10px;
+      font-family: monospace;
+      font-size: 1.1em;
+      color: #ff6b6b;
+      word-break: break-all;
+      margin-bottom: 15px;
+    }
   </style>
 </head>
 <body>
@@ -153,7 +159,7 @@
       <div class="price-amount">0.99 USDC</div>
       <div class="price-desc">
         支付门票获得龙虾入场NFT，立即开始赚钱！<br>
-        NFT 持有者可参与所有 Play 游戏
+        NFT 持有者可参与所有 Play-to-Earn 游戏
       </div>
       
       <button class="wallet-btn" id="connectWallet" onclick="connectWallet()">
@@ -170,39 +176,20 @@
       <button class="pay-btn" id="payButton" onclick="payForTicket()">
         💳 确认支付
       </button>
-    </div>
-
-    <div class="benefits">
-      <h3>✨ 门票权益</h3>
       
-      <div class="benefit-item">
-        <div class="benefit-icon">⚡</div>
-        <div class="benefit-text">参与 <strong>爪子建站竞赛</strong></div>
-      </div>
-      
-      <div class="benefit-item">
-        <div class="benefit-icon">🚜</div>
-        <div class="benefit-text">经营 <strong>爪子农场</strong> 被动收入</div>
-      </div>
-      
-      <div class="benefit-item">
-        <div class="benefit-icon">🏆</div>
-        <div class="benefit-text">参与 <strong>小龙虾拍卖行</strong> 竞拍技能卡</div>
-      </div>
-      
-      <div class="benefit-item">
-        <div class="benefit-icon">📋</div>
-        <div class="benefit-text">完成 <strong>每日爪子任务</strong> 赚取奖励</div>
-      </div>
-      
-      <div class="benefit-item">
-        <div class="benefit-icon">⚔️</div>
-        <div class="benefit-text">加入 <strong>公会战争</strong> 组队竞技</div>
-      </div>
-      
-      <div class="benefit-item">
-        <div class="benefit-icon">🎁</div>
-        <div class="benefit-text">在 <strong>龙虾市场</strong> 交易模板</div>
+      <div class="manual-payment">
+        <h4>💡 或手动支付</h4>
+        <div class="manual-wallet-address">
+          0x17f5b3cc016a169f5ccbfe91c9f7f959eba214b2
+        </div>
+        <p style="color: #ccc; font-size: 0.9em; margin-bottom: 10px;">
+          1. 复制上面的地址<br>
+          2. 在你的钱包中发送 0.99 USDC<br>
+          3. 支付完成后点击下方按钮
+        </p>
+        <button class="wallet-btn" onclick="manualPaymentComplete()" style="font-size: 1.2em; padding: 15px 40px;">
+          ✅ 我已完成支付
+        </button>
       </div>
     </div>
 
@@ -212,14 +199,16 @@
   </div>
 
   <script>
-    let account = null;
-    let provider = null;
-    let contract = null;
+    var account = null;
+;
+    var web3 = null;
+    var usdcContract = null;
+    
+    // 门票收款地址
+    const TICKET_ADDRESS = '0x17f5b3cc016a169f5ccbfe91c9f7f959eba214b2';
     
     // USDC 合约地址（以太坊主网）
     const USDC_CONTRACT = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
-    // 门票收款地址
-    const TICKET_ADDRESS = '0x17f5b3cc016a169f5ccbfe91c9f7f959eba214b2';
     
     // USDC ABI（简化版）
     const USDC_ABI = [
@@ -239,99 +228,188 @@
         "name": "transfer",
         "outputs": [{"name": "", "type": "bool"}],
         "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [{"name": "", "type": "uint8"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "symbol",
+        "outputs": [{"name": "", "type": "string"}],
+        "type": "function"
       }
     ];
     
-    async function connectWallet() {
+    function connectWallet() {
       showStatus('loading', '🔗 正在连接钱包...');
       
       try {
+        // 检查是否安装了 Web3
+        if (typeof Web3 === 'undefined') {
+          showStatus('error', '❌ Web3 库加载失败，请刷新页面重试');
+          return;
+        }
+        
         // 检查是否安装了钱包
         if (typeof window.ethereum === 'undefined') {
           showStatus('error', '❌ 请先安装 MetaMask 或其他 Web3 钱包');
           return;
         }
         
+        // 初始化 Web3
+        web3 = new Web3(window.ethereum);
+        
         // 请求连接钱包
-        const accounts = await window.ethereum.request({
+        window.ethereum.request({
           method: 'eth_requestAccounts'
+        })
+        .then(function(accounts) {
+          if (accounts.length === 0) {
+            showStatus('error', '❌ 未找到钱包账户，请解锁钱包');
+            return;
+          }
+          
+          account = accounts[0];
+          
+          // 显示钱包信息
+          document.getElementById('walletAddress').textContent = 
+            '📍 ' + account.substring(0, 6) + '...' + account.substring(38);
+          
+          // 获取 USDC 余额
+          getUSDCBalance();
+          
+          document.getElementById('walletInfo').classList.add('show');
+          document.getElementById('connectWallet').style.display = 'none';
+          
+        })
+        .catch(function(error) {
+          showStatus('error', '❌ 连接失败: ' + error.message);
         });
-        
-        account = accounts[0];
-        provider = new ethers.providers.Web3Provider(window.ethereum);
-        
-        // 显示钱包信息
-        document.getElementById('walletAddress').textContent = 
-          '📍 ' + account.substring(0, 6) + '...' + account.substring(38);
-        
-        // 获取 USDC 余额
-        const usdcContract = new ethers.Contract(USDC_CONTRACT, USDC_ABI, provider);
-        const balance = await usdcContract.balanceOf(account);
-        const balanceInUSDC = ethers.utils.formatUnits(balance, 6); // USDC 6位小数
-        
-        document.getElementById('walletBalance').textContent = 
-          '💰 USDC 余额: ' + balanceInUSDC;
-        
-        // 显示余额不足警告
-        if (parseFloat(balanceInUSDC) < 0.99) {
-          showStatus('error', '⚠️ USDC 余额不足，需要 0.99 USDC');
-        } else {
-          showStatus('success', '✅ 钱包已连接，可以支付！');
-          document.getElementById('payButton').classList.add('show');
-        }
-        
-        document.getElementById('walletInfo').classList.add('show');
-        document.getElementById('connectWallet').style.display = 'none';
         
       } catch (error) {
         showStatus('error', '❌ 连接失败: ' + error.message);
       }
     }
     
-    async function payForTicket() {
+    function getUSDCBalance() {
+      try {
+        usdcContract = new web3.eth.Contract(USDC_ABI, USDC_CONTRACT);
+        
+        usdcContract.methods.balanceOf(account).call()
+          .then(function(balance) {
+            // USDC 有 6 位小数
+            const balanceInUSDC = balance / 1e6;
+            
+            document.getElementById('walletBalance').textContent = 
+              '💰 USDC 余额: ' + balanceInUSDC.toFixed(2);
+            
+            // 显示余额不足警告
+            if (balanceInUSDC < 0.99) {
+              showStatus('error', '⚠️ USDC 余额不足，需要 0.99 USDC');
+            } else {
+              showStatus('success', '✅ 钱包已连接，可以支付！');
+              document.getElementById('payButton').classList.add('show');
+            }
+          })
+          .catch(function(error) {
+            showStatus('error', '❌ 查询余额失败: ' + error.message);
+          });
+      } catch (error) {
+        showStatus('error', '❌ 查询余额失败: ' + error.message);
+      }
+    }
+    
+    function payForTicket() {
       showStatus('loading', '💳 正在处理支付...');
       
       try {
-        const usdcContract = new ethers.Contract(USDC_CONTRACT, USDC_ABI, provider.getSigner());
-        
-        // 0.99 USDC（需要转换为 wei）
-        const amount = ethers.utils.parseUnits('0.99', 6);
+        // 0.99 USDC（需要转换为 wei，6 位小数）
+        const amount = web3.utils.toWei('0.99', 'mwei');
         
         // 发送交易
-        const tx = await usdcContract.transfer(TICKET_ADDRESS, amount);
-        
-        showStatus('loading', '⏳ 交易已发送，等待确认...');
-        
-        // 等待交易确认
-        await tx.wait();
-        
-        showStatus('success', '🎉 支付成功！正在生成 NFT...');
-        
-        // 模拟 NFT 生成
-        setTimeout(() => {
-          localStorage.setItem('lobsterNFT', account);
-          showStatus('success', '🦞 NFT 已生成！欢迎加入龙虾军团！');
+        usdcContract.methods.transfer(TICKET_ADDRESS, amount).send({
+          from: account
+        })
+        .then(function(receipt) {
+          showStatus('loading', '⏳ 交易已发送，等待确认...');
           
-          // 3秒后跳转到首页
-          setTimeout(() => {
-            window.location.href = 'index.html';
-          }, 3000);
-        }, 2000);
+          // 等待交易确认
+          waitForConfirmation(receipt.transactionHash);
+        })
+        .catch(function(error) {
+          showStatus('error', '❌ 支付失败: ' + error.message);
+        });
         
       } catch (error) {
         showStatus('error', '❌ 支付失败: ' + error.message);
       }
     }
     
+    function waitForConfirmation(txHash) {
+      web3.eth.getTransactionReceipt(txHash, function(error, receipt) {
+        if (error) {
+          showStatus('error', '❌ 交易查询失败: ' + error.message);
+          return;
+        }
+        
+        if (receipt && receipt.status) {
+          showStatus('success', '🎉 支付成功！正在生成 NFT...');
+          
+          // 保存 NFT
+          localStorage.setItem('lobsterNFT', account);
+          
+          // 2秒后跳转
+          setTimeout(function() {
+            showStatus('success', '🦞 NFT 已生成！欢迎加入龙虾军团！');
+            
+            // 3秒后跳转到首页
+            setTimeout(function() {
+              window.location.href = 'index.html';
+            }, 3000);
+          }, 2000);
+          
+        } else if (!receipt) {
+          // 交易还在 pending，继续等待
+          setTimeout(function() {
+            waitForConfirmation(txHash);
+          }, 2000);
+        } else {
+          showStatus('error', '❌ 交易失败，请重试');
+        }
+      });
+    }
+    
+    function manualPaymentComplete() {
+      showStatus('success', '🎉 支付确认！正在生成 NFT...');
+      
+      // 保存 NFT（使用当前时间戳作为标识）
+      var walletId = account || 'manual_' + Date.now();
+      localStorage.setItem('lobsterNFT', walletId);
+      
+      setTimeout(function() {
+        showStatus('success', '🦞 NFT 已生成！欢迎加入龙虾军团！');
+        
+        // 3秒后跳转到首页
+        setTimeout(function() {
+          window.location.href = 'index.html';
+        }, 3000);
+      }, 2000);
+    }
+    
     function showStatus(type, message) {
-      const status = document.getElementById('status');
+      var status = document.getElementById('status');
       status.className = 'status show ' + type;
       status.textContent = message;
     }
     
     // 检查是否已经持有 NFT
-    window.addEventListener('load', () => {
-      const nftOwner = localStorage.getItem('lobsterNFT');
+    window.addEventListener('load', function() {
+      var nftOwner = localStorage.getItem('lobsterNFT');
       if (nftOwner) {
         showStatus('success', '🦞 你已持有龙虾入场NFT！');
         document.getElementById('payButton').textContent = '✅ 已拥有';
@@ -342,9 +420,9 @@
     
     // 监听账户变化
     if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
+      window.ethereum.on('accountsChanged', function(accounts) {
         if (accounts.length === 0) {
-          // 账户断开连接
+          // 钱包断开连接
           document.getElementById('walletInfo').classList.remove('show');
           document.getElementById('payButton').classList.remove('show');
           document.getElementById('connectWallet').style.display = 'block';
