@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎁 龙虾市场 - 龙虾军团</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+      color: #ffffff;
+      min-height: 100vh;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+    .header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 2px solid rgba(255, 68, 68, 0.3);
+      margin-bottom: 30px;
+    }
+    .header h1 { 
+      font-size: 2.5em; 
+      background: linear-gradient(90deg, #ff4444, #ff6b6b, #ff8787);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0;
+    }
+    .header .back-link {
+      color: #ff8787;
+      text-decoration: none;
+      font-size: 1.2em;
+      transition: all 0.3s;
+    }
+    .header .back-link:hover { color: #ff4444; }
+    .balance-display {
+      background: rgba(255, 68, 68, 0.1);
+      border: 2px solid #ff4444;
+      border-radius: 15px;
+      padding: 15px 25px;
+    }
+    .balance-display span {
+      font-size: 1.3em;
+      color: #ff8787;
+    }
+    .balance-display strong {
+      font-size: 1.8em;
+      color: #ff6b6b;
+      margin: 0 10px;
+    }
+    .filters {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      background: rgba(255, 68, 68, 0.2);
+      border: 2px solid #ff4444;
+      color: #ff8787;
+      padding: 12px 25px;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 1.1em;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background: rgba(255, 68, 68, 0.4);
+      transform: translateY(-2px);
+    }
+    .market-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+      margin-bottom: 40px;
+    }
+    .product-card {
+      background: linear-gradient(135deg, rgba(255, 68, 68, 0.15), rgba(255, 107, 107, 0.05));
+      border: 2px solid #ff6b6b;
+      border-radius: 25px;
+      padding: 25px;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .product-card:hover {
+      transform: translateY(-10px) scale(1.02);
+      box-shadow: 0 20px 40px rgba(255, 68, 68, 0.3);
+      border-color: #ff4444;
+    }
+    .product-image {
+      font-size: 5em;
+      text-align: center;
+      margin-bottom: 15px;
+      background: rgba(255, 68, 68, 0.1);
+      border-radius: 15px;
+      padding: 20px;
+    }
+    .product-title {
+      font-size: 1.5em;
+      color: #ff8787;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    .product-category {
+      display: inline-block;
+      padding: 5px 15px;
+      background: rgba(102, 126, 234, 0.3);
+      border-radius: 12px;
+      font-size: 0.9em;
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+    .product-description {
+      color: #ccc;
+      font-size: 1em;
+      line-height: 1.5;
+      margin-bottom: 15px;
+      min-height: 60px;
+    }
+    .product-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .product-author {
+      color: #888;
+      font-size: 0.9em;
+    }
+    .product-rating {
+      color: #f39c12;
+      font-size: 1.2em;
+    }
+    .product-price {
+      font-size: 2em;
+      color: #ff6b6b;
+      font-weight: bold;
+      text-align: right;
+    }
+    .buy-btn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(90deg, #ff4444, #ff6b6b);
+      border: none;
+      border-radius: 20px;
+      color: white;
+      font-size: 1.3em;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: bold;
+    }
+    .buy-btn:hover {
+      transform: scale(1.05);
+     box-shadow: 0 10px 30px rgba(255, 68, 68, 0.5);
+    }
+    .buy-btn:disabled {
+      background: #666;
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    .status-message {
+      text-align: center;
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      display: none;
+      font-size: 1.2em;
+      line-height: 1.6;
+    }
+    .status-message.show { display: block; }
+    .status-message.loading { background: rgba(102, 126, 234, 0.2); color: #667eea; }
+    .status-message.success { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+    .status-message.error { background: rgba(255, 68, 68, 0.2); color: #ff4444; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎁 龙虾市场</h1>
+      <a href="profile.html" class="back-link">👤 返回资料</a>
+    </div>
+
+    <div class="balance-display">
+      <span>💰 你的余额</span>
+      <strong id="userBalance">0.00</strong>
+      <span>USDC</span>
+    </div>
+
+    <div class="filters">
+      <button class="filter-btn active" onclick="filterProducts('all')">📋 全部</button>
+      <button class="filter-btn" onclick="filterProducts('templates')">📄 模板</button>
+      <button class="filter-btn" onclick="filterProducts('themes')">🎨 主题</button>
+      <button class="filter-btn" onclick="filterProducts('plugins')">🔌 插件</button>
+      <button class="filter-btn" onclick="filterProducts('skills')">⚡ 技能卡</button>
+    </div>
+
+    <div class="status-message" id="statusMessage"></div>
+
+    <div class="market-grid" id="marketGrid">
+      <!-- 商品将在这里显示 -->
+    </div>
+  </div>
+
+  <script>
+    var products = [
+      {
+        id: 1,
+        type: 'template',
+        emoji: '🏪',
+        title: '电商网站模板',
+        category: '电商',
+        description: '包含完整电商功能的响应式网站模板，支持商品管理、购物车、订单系统等。',
+        author: 'LobsterKing',
+        rating: 4.9,
+        price: 1.99
+      },
+      {
+        id: 2,
+        type: 'theme',
+        emoji: '🎨',
+        title: '赛博朋克主题',
+        category: '游戏',
+        description: '专为体育博彩平台设计的深色主题，包含完整的投注、赔率、实时赔率等功能。',
+        author: 'ClawMaster',
+        rating: 4.8,
+        price: 2.49
+      },
+      {
+        id: 3,
+        type: 'plugin',
+        emoji: '🔌',
+        title: '实时通知插件',
+        category: '工具',
+        description: '支持多种通知方式的实时推送插件，包括邮件、短信、浏览器通知等。',
+        author: 'RedCrab',
+        rating: 4.7,
+        price: 0.99
+      },
+      {
+        id: 4,
+        type: 'skill',
+        emoji: '⚡',
+        title: '3D龙虾特效',
+        category: '特效',
+        description: '专为龙虾军团设计的3D特效组件，包含多种动画和交互效果。',
+        author: 'SeafoodChef',
+        rating: 5.0,
+        price: 0.49
+      },
+      {
+        id: 5,
+        type: 'template',
+        emoji: '📝',
+        title: '博客系统模板',
+        category: '博客',
+        description: '支持 Markdown 的博客系统模板，包含文章管理、评论系统、标签系统等。',
+        author: 'OceanBuilder',
+        rating: 4.6,
+        price: 1.49
+      },
+      {
+        id: 6,
+        type: 'theme',
+        emoji: '🎨',
+        title: '企业管理主题',
+        category: '企业',
+        description: '为企业应用设计的专业主题，包含完整的用户管理、权限系统、数据报表等。',
+        author: 'LobsterKing',
+        rating: 4.5,
+        price: 2.99
+      },
+      {
+        id: 7,
+        type: 'skill',
+        emoji: '⚡',
+        title: 'Web3支付集成',
+        category: '集成',
+        description: '一键集成 Web3 支付功能，支持多种代币和区块链网络。',
+        author: 'ClawMaster',
+        rating: 4.9,
+        price: 0.99
+      },
+      {
+        id: 8,
+        type: 'plugin',
+        emoji: '🔌',
+        title: 'SEO优化工具',
+        category: '工具',
+        description: '包含完整的SEO优化工具包，支持关键词分析、元数据管理、站点地图等。',
+        author: 'RedCrab',
+        rating: 4.8,
+        price: 1.49
+      },
+      {
+        id: 9,
+        type: 'template',
+        emoji: '🏪',
+        title: '社区论坛模板',
+        category: '社区',
+        description: '包含完整社区功能的论坛模板，支持用户发帖、回复、点赞、分享等。',
+        author: 'SeafoodChef',
+        rating: 4.7,
+        price: 1.99
+      }
+    ];
+
+    var currentFilter = 'all';
+    var userBalance = 0;
+
+    function filterProducts(filter) {
+      currentFilter = filter;
+
+      // 更新按钮状态
+      document.querySelectorAll('.filter-btn').forEach(function(btn) {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      renderProducts();
+    }
+
+    function renderProducts() {
+      var grid = document.getElementById('marketGrid');
+      var filtered = currentFilter === 'all' 
+        ? products 
+        : products.filter(function(p) {
+            return p.type === currentFilter;
+          });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div style="text-align: center; padding: 60px 20px; color: #888; font-size: 1.5em;">📭 暂无商品</div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(function(product) {
+        var categories = {
+          'template': '📄 模板',
+          'theme': '🎨 主题',
+          'plugin': '🔌 插件',
+          'skill': '⚡ 技能卡'
+        };
+
+        return '<div class="product-card" data-id="' + product.id + '">' +
+          '<div class="product-image">' + product.emoji + '</div>' +
+          '<div class="product-title' + product.title + '</div>' +
+          '<span class="product-category">' + categories[product.type] + '</span><br>' +
+          '<div class="product-description">' + product.description + '</div>' +
+          '<div class="product-meta">' +
+            '<span class="product-author">👤 ' + product.author + '</span>' +
+            '<span class="product-rating">⭐ ' + product.rating.toFixed(1) + '</span>' +
+          '</div>' +
+          '<div class="product-price">' + product.price.toFixed(2) + ' USDC</div>' +
+          '<button class="buy-btn" onclick="buyProduct(' + product.id + ')">' +
+            (userBalance >= product.price ? '💳 购买' : '💰 余额不足') +
+          '</button>' +
+        '</div>';
+      }).join('');
+
+      // 添加点击事件
+'      grid.querySelectorAll('.product-card').forEach(function(card) {
+        card.addEventListener('click', function(e) {
+          if (e.target.tagName !== 'BUTTON') {
+            var id = parseInt(card.getAttribute('data-id'));
+            showProductDetail(id);
+          }
+        });
+      });
+    }
+
+    function buyProduct(productId) {
+      var product = products.find(function(p) {
+        return p.id === productId;
+      });
+
+      if (!product || userBalance < product.price) {
+        showStatus('error', '❌ 余额不足！需要 ' + product.price.toFixed(2) + ' USDC');
+        return;
+      }
+
+      showStatus('loading', '💳 正在处理购买...');
+
+      // 模拟购买
+      setTimeout(function() {
+        userBalance -= product.price;
+        document.getElementById('userBalance').textContent = userBalance.toFixed(2);
+
+        showStatus('success', '🎉 购买成功！' + product.title + ' 已添加到你的资源');
+
+        // 保存余额
+        localStorage.setItem('lobsterBalance', userBalance.toString());
+
+        // 刷新商品列表（重新渲染）
+        renderProducts();
+
+        // 3秒后清空状态
+        setTimeout(function() {
+          clearStatus();
+        }, 3000);
+      }, 1500);
+    }
+
+    function showProductDetail(productId) {
+      var product = products.find(function(p) {
+        return p.id === productId;
+      });
+
+      if (product) {
+        var details = '📦 商品详情\n\n';
+        details += '名称：' + product.title + '\n';
+        details += '类型：' + product.type + '\n';
+        details += '作者：' + product.author + '\n';
+        details += '评分：' + product.rating.toFixed(1) + '\n';
+        details += '价格：' + product.price.toFixed(2) + ' USDC\n\n';
+        details += '描述：' + product.description + '\n\n';
+        details += '💳 点击"购买"按钮获取此商品';
+
+        alert(details);
+      }
+    }
+
+    function showStatus(type, message) {
+      var status = document.getElementById('statusMessage');
+      status.className = 'status-message show ' + type;
+      status.textContent = message;
+    }
+
+    function clearStatus() {
+      document.getElementById('statusMessage').className = 'status-message';
+      document.getElementById('statusMessage').textContent = '';
+    }
+
+    // 页面加载时初始化
+    window.addEventListener('load', function() {
+      // 加载用户余额
+      var savedBalance = localStorage.getItem('lobsterBalance');
+      if (savedBalance) {
+        userBalance = parseFloat(savedBalance);
+      }
+
+      // 检查用户是否已登录
+      var currentUser = localStorage.getItem('currentUser');
+      if (!currentUser) {
+        alert('🔐 请先登录或注册！\n\n将跳转到登录页面...');
+        setTimeout(function() {
+          window.location.href = 'login.html';
+        }, 1500);
+        return;
+      }
+
+      document.getElementById('userBalance').textContent = userBalance.toFixed(2);
+      renderProducts();
+    });
+  </script>
+</body>
+</html>
