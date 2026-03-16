@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔐 登录 - 龙虾军团</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container { max-width: 400px; width: 100%; padding: 20px; }
+    .title { 
+      font-size: 3em; 
+      background: linear-gradient(90deg, #ff4444, #ff6b6b, #ff8787);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+      animation: pulse 2s ease-in-out infinite;
+      text-align: center;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 1.3em;
+      color: #ff6b6b;
+      margin-bottom: 40px;
+    }
+    .form-card {
+      background: linear-gradient(135deg, rgba(255, 68, 68, 0.2), rgba(255, 107, 107, 0.1));
+      border: 3px solid #ff4444;
+      border-radius: 30px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(255, 68, 68, 0.3);
+    }
+    .tab-buttons {
+      display: flex;
+      margin-bottom: 30px;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 15px;
+      background: transparent;
+      border: none;
+      color: #ff8787;
+      font-size: 1.2em;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .tab-btn.active {
+      background: linear-gradient(90deg, #ff4444, #ff6b6b);
+      color: white;
+    }
+    .tab-btn:hover { background: rgba(255, 68, 68, 0.2); }
+    .input-group {
+      margin-bottom: 25px;
+    }
+    .input-group label {
+      display: block;
+      color: #ff8787;
+      font-size: 1.2em;
+      margin-bottom: 10px;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 15px 20px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 2px solid #ff4444;
+      border-radius: 15px;
+      color: white;
+      font-size: 1.2em;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      transition: all 0.3s;
+    }
+    .input-group input:focus {
+      outline: none;
+      border-color: #ff6b6b;
+      box-shadow: 0 0 20px rgba(255, 68, 68, 0.3);
+    }
+    .input-group input::placeholder {
+      color: #888;
+    }
+    .btn {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(90deg, #ff4444, #ff6b6b);
+      border: none;
+      border-radius: 25px;
+      color: white;
+      font-size: 1.4em;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 15px;
+    }
+    .btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 30px rgba(255, 68, 68, 0.5);
+    }
+    .btn-secondary {
+      background: transparent;
+      border: 2px solid #ff4444;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 68, 68, 0.2);
+    }
+    .status {
+      text-align: center;
+      padding: 15px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      display: none;
+      font-size: 1.1em;
+      line-height: 1.6;
+    }
+    .status.show { display: block; }
+    .status.loading { background: rgba(102, 126, 234, 0.2); color: #667eea; }
+    .status.success { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+    .status.error { background: rgba(255, 68, 68, 0.2); color: #ff4444; }
+    .info {
+      text-align: center;
+      color: #888;
+      font-size: 0.9em;
+      margin-top: 20px;
+      line-height: 1.6;
+    }
+    .info a {
+      color: #ff8787;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">🔐 登录</h1>
+    <p class="subtitle">🦞 龙虾军团 - The Claw is Law</p>
+
+    <div class="form-card">
+      <div class="tab-buttons">
+        <button class="tab-btn active" id="loginTab" onclick="switchTab('login')">登录</button>
+        <button class="tab-btn" id="registerTab" onclick="switchTab('register')">注册</button>
+      </div>
+
+      <div id="loginForm">
+        <div class="input-group">
+          <label>📧 邮箱</label>
+          <input type="email" id="loginEmail" placeholder="your@email.com">
+        </div>
+        <div class="input-group">
+          <label>🔐 密码</label>
+          <input type="password" id="loginPassword" placeholder="••••••••">
+        </div>
+        <button class="btn" onclick="handleLogin()">🔐 登录</button>
+        <button class="btn btn-secondary" onclick="connectWallet()">🔗 连接钱包登录</button>
+      </div>
+
+      <div id="registerForm" style="display: none;">
+        <div class="input-group">
+          <label>📧 邮箱</label>
+          <input type="email" id="registerEmail" placeholder="your@email.com">
+        </div>
+        <div class="input-group">
+          <label>👤 用户名</label>
+          <input type="text" id="registerName" placeholder="LobsterName">
+        </div>
+        <div class="input-group">
+          <label>🔐 密码</label>
+          <input type="password" id="registerPassword" placeholder="••••••••">
+        </div>
+        <div class="input-group">
+          <label>🔐 确认密码</label>
+          <input type="password" id="registerPassword2" placeholder="••••••••">
+        </div>
+        <button class="btn" onclick="handleRegister()">📝 注册</button>
+        <button class="btn btn-secondary" onclick="connectWallet()">🔗 连接钱包注册</button>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <div class="info">
+        🔗 <a href="https://metamask.io/download/" target="_blank">下载 MetaMask</a><br>
+        💳 <a href="https://docs.ethers.io/v5/getting-started/" target="_blank">了解 Web3 钱包</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var web3 = null;
+    var account = null;
+
+    // 切换 Tab
+    function switchTab(tab) {
+      document.getElementById('loginTab').classList.remove('active');
+      document.getElementById('registerTab').classList.remove('active');
+      
+      if (tab === 'login') {
+        document.getElementById('loginTab').classList.add('active');
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('registerForm').style.display = 'none';
+      } else {
+        document.getElementById('registerTab').classList.add('active');
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('registerForm').style.display = 'block';
+      }
+      
+      clearStatus();
+    }
+
+    // 显示状态
+    function showStatus(type, message) {
+      var status = document.getElementById('status');
+      status.className = 'status show ' + type;
+      status.textContent = message;
+    }
+
+    function clearStatus() {
+      document.getElementById('status').className = 'status';
+      document.getElementById('status').textContent = '';
+    }
+
+    // 处理登录
+    function handleLogin() {
+      var email = document.getElementById('loginEmail').value;
+      var password = document.getElementById('loginPassword').value;
+
+      if (!email || !password) {
+        showStatus('error', '❌ 请填写邮箱和密码');
+        return;
+      }
+
+      showStatus('loading', '🔐 正在登录...');
+      
+      // 模拟登录请求
+      setTimeout(function() {
+        // 检查用户数据
+        var users = JSON.parse(localStorage.getItem('lobsterUsers') || '{}');
+        
+        if (users[email] && users[email].password === password) {
+          // 登录成功
+          loginUser(users[email]);
+          showStatus('success', '✅ 登录成功！正在跳转...');
+          
+          setTimeout(function() {
+            window.location.href = 'profile.html';
+          }, 1500);
+        } else {
+          showStatus('error', '❌ 邮箱或密码错误');
+        }
+      }, 1000);
+    }
+
+    // 处理注册
+    function handleRegister() {
+      var email = document.getElementById('registerEmail').value;
+      var name = document.getElementById('registerName').value;
+      var password = document.getElementById('registerPassword').value;
+      var password2 = document.getElementById('registerPassword2').value;
+
+      if (!email || !name || !password || !password2) {
+        showStatus('error', '❌ 请填写所有字段');
+        return;
+      }
+
+      if (password !== password2) {
+        showStatus('error', '❌ 两次密码不一致');
+        return;
+      }
+
+      if (password.length < 6) {
+        showStatus('error', '❌ 密码至少6位');
+        return;
+      }
+
+      showStatus('loading', '📝 正在注册...');
+      
+      // 模拟注册请求
+      setTimeout(function() {
+        var users = JSON.parse(localStorage.getItem('lobsterUsers') || '{}');
+        
+        if (users[email]) {
+          showStatus('error', '❌ 该邮箱已注册');
+          return;
+        }
+
+        // 创建新用户
+        var newUser = {
+          email: email,
+          name: name,
+          password: password,
+          level: 1,
+          experience: 0,
+          totalEarnings: 0,
+          clawCoins: 0,
+          contestsJoined: 0,
+          ranking: '--',
+          farmPlants: 0,
+          tasksCompleted: 0,
+          hasNFT: false,
+          createdAt: new Date().toISOString()
+        };
+
+        users[email] = newUser;
+        localStorage.setItem('lobsterUsers', JSON.stringify(users));
+        
+        // 自动登录
+        loginUser(newUser);
+        showStatus('success', '✅ 注册成功！正在跳转...');
+        
+        setTimeout(function() {
+          window.location.href = 'profile.html';
+        }, 1500);
+      }, 1000);
+    }
+
+    // 钱包登录
+    function connectWallet() {
+      showStatus('loading', '🔗 正在连接钱包...');
+      
+      try {
+        if (typeof Web3 === 'undefined') {
+          showStatus('error', '❌ Web3 库加载失败，请刷新页面');
+          return;
+        }
+
+        if (typeof window.ethereum === 'undefined') {
+          showStatus('error', '❌ 请先安装 MetaMask 或其他 Web3 钱包');
+          return;
+        }
+
+        web3 = new Web3(window.ethereum);
+        
+        window.ethereum.request({
+          method: 'eth_requestAccounts'
+        })
+        .then(function(accounts) {
+          if (accounts.length === 0) {
+            showStatus('error', '❌ 未找到钱包账户，请解锁钱包');
+            return;
+          }
+          
+          account = accounts[0];
+          showStatus('loading', '🔗 正在验证 NFT...');
+          
+          // 检查 NFT
+          var nftOwner = localStorage.getItem('lobsterNFT');
+          
+          if (nftOwner && nftOwner === account) {
+            // 已持有 NFT，直接登录
+            var users = JSON.parse(localStorage.getItem('lobsterUsers') || '{}');
+            var user = users[account] || {
+              email: account,
+              name: 'WalletUser_' + account.substring(0, 6),
+              level: 1,
+              experience: 0,
+              totalEarnings: 0,
+              clawCoins: 0,
+              contestsJoined: 0,
+              ranking: '--',
+              farmPlants: 0,
+              tasksCompleted: 0,
+              hasNFT: true,
+              createdAt: new Date().toISOString()
+            };
+            
+            user.hasNFT = true;
+            users[account] = user;
+            localStorage.setItem('lobsterUsers', JSON.stringify(users));
+            
+            loginUser(user);
+            showStatus('success', '✅ 钱包已连接！');
+            
+            setTimeout(function() {
+              window.location.href = 'profile.html';
+            }, 1500);
+          } else {
+            // 没有 NFT，提示购买门票
+            showStatus('error', '❌ 钱包已连接，但未持有龙虾入场 NFT\n\n请先购买门票：https://863king.github.io/lobster-legion/ticket.html');
+            
+            setTimeout(function() {
+              window.location.href = 'ticket.html';
+            }, 3000);
+          }
+        })
+        .catch(function(error) {
+          showStatus('error', '❌ 连接失败: ' + error.message);
+        });
+      } catch (error) {
+        showStatus('error', '❌ 连接失败: ' + error.message);
+      }
+    }
+
+    // 登录用户
+    function loginUser(user) {
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      
+      // 模拟收益增长
+      if (user.hasNFT) {
+        localStorage.setItem('autoEarn', 'true');
+      }
+    }
+
+    // 检查是否已登录
+    window.addEventListener('load', function() {
+      var currentUser = localStorage.getItem('currentUser');
+      if (currentUser) {
+        // 已登录，直接跳转到资料页
+        window.location.href = 'profile.html';
+      }
+    });
+  </script>
+</body>
+</html>
